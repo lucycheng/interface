@@ -1,0 +1,367 @@
+<head>
+   <title>CityScope Interface</title>
+   <meta charset="utf-8">
+   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+   <script src="//code.jquery.com/jquery-1.9.1.js"></script>
+   <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+   <script src="js/draggable/jquery-1.10.2.js"></script>
+   <script src="js/draggable/jquery-ui-1.10.4.custom.js"></script>
+   <script src="js/draggable/jquery-ui-1.10.4.custom.min.js"></script>
+
+   <script src="processing.min.js"></script>
+   <script>
+    var buildings = new Array();
+	for (i = 0; i < 48*48; i ++){
+		buildings[i] = new Array (10)
+	}
+   var maxDistance = 100;
+   var ps = Processing.getInstanceById("sketch");
+	<!-- http://www.ryerson.ca/JavaScript/lectures/forms/textinput.html?firstName=1 -->
+	<!-- http://processingjs.org/articles/PomaxGuide.html -->
+	function submitDistance(form){
+		if (form.maximum.value == "")
+			alert("Invalid Entry");
+		else
+			if (form.unit.value == "m")
+				maxDistance = form.maximum.value;
+			else if(form.unit.value =="km")
+				maxDistance = form.maximum.value * 1000;
+			else if (form.unit.value == "mi")
+				maxDistance = form.maximum.value * 1609;
+		var ps = Processing.getInstanceById("sketch");
+		ps.redraw();
+		}
+	</script>
+
+<style type="text/css">
+
+	body {font-family: "Helvetica", Century Gothic, sans-serif; font-weight: 10px; text-align:center; height: 100%;}
+	
+	.grid {border: 1px solid #ccc;border-width: 1px 0 0 1px; margin-left:50px;}
+	.grid div {border: 1px solid #ccc;border-width: 0 1px 1px 0;float: left;}
+    	
+    #main {float:right;}
+    #distance {clear:right;}
+    
+	table {float:right; border-spacing: 0.5rem; border: 1px solid #333; padding: 5px;}
+	td {padding: 0.5rem;}
+	#type { background: hsl(180, 50%, 50%); text-align: center;}
+	#pop {background: hsl(190, 70%, 50%); text-align: center;}
+	#score { background: hsl(200, 70%, 50%); text-align: center;}
+	td:nth-child(2) {border: 1px solid hsl(180, 80%, 50%); text-align: center; font-size: 10px;}
+	#drop {border: 1px solid hsl(180, 80%, 50%); text-align: center; font-size: 10px;}
+	#max_fill {border: 1px solid hsl(180, 80%, 50%); text-align: center; font-size: 10px;}
+	#type_height {border: 1px solid hsl(180, 80%, 50%); text-align: center; font-size: 10px;}
+	#type_width {border: 1px solid hsl(180, 80%, 50%); text-align: center; font-size: 10px;}
+	th {background: hsl(170, 40%, 40%); color: #fff; padding-top: 5px;}
+	
+	.icons { margin:0px auto;}
+	img {padding-left:10px; padding-right:10px; border-radius: 50%;}
+	#footer {position:fixed; left:0px; bottom:0px; height:150px; width:100%; 
+				border-top: 1px solid black; background: #888;}
+	#footer h1 {font-family: "Helvetica", Helvetica, sans-serif; font-weight: 100px; 
+				border: 1px solid #3D8E81; margin-left: 200px; margin-right: 200px; 
+				background: #3D8E81; padding-top: 5px; }
+
+	#tooltip {display: none; max-height: 500px; max-width: 100px; text-align:center;
+    		overflow: hidden; border: 2px solid #ccc; position: absolute;
+    		margin-left: -200px; margin-top: -65px; z-index: 100; padding: 5px 10px 5px 10px;
+    		background: #ccc; border: 1px solid hsl(180, 80%, 50%); 
+    		font-size: 12px; font-family:"Helvetica", Helvetica, sans-serif;}
+	
+</style>
+
+</head>
+
+<body>
+
+<div id = "container">
+<h1>CityScope Interactive Visualization</h1>
+
+<form id = "main">
+<table style="width:300px">
+<thead>
+<tr>
+<th colspan = "5" id = "header">INFO </th>
+</tr>
+</thead>
+<tr>
+  <td colspan = "2" id="type">TYPE</td>
+  <td id = "type_fill"><input type = "text" name = "type" ></td> 
+</tr>
+<tr>
+  <td colspan = "2" id="pop">POPULATION</td>
+  <td id = "pop_fill"> <input type = "text" name = "population" > </td> 
+</tr>
+<tr>
+  <td colspan = "2" id="score">WALK SCORE</td>
+  <td id = "score_fill"><input type = "text" name = "score" > </td>
+</tr>
+
+<tr>
+<td>
+</td>
+</tr>
+
+<!-- 
+TO DO (4/29):
+1) populate buildings array!
+
+----------------------------------------------------------------------------------------
+TO DO (4/8):
+1) color code for the divs (!!!!!)
+2) figure out the drag and drop 
+
+-----------------------------------------------------------------------------------------
+TO DO (3/17):
+2) fix positioning
+3) move simulation to separate heading (like maximum walkable distance)
+4) define parameters for each icon
+	- category, type (eg. lab), UC (number of people who can use that unit), target (# in city)
+		height(stories), containment rate (% of people who live there who are going to work in the city),
+		color (red green blue)
+	-> have big table that hold all the information for each cell
+		-> double array -> array[[ all of the parameters...], [parameters]] -> global var = buildings
+		- when you drag icon to the cell, it fills in array from the index of the icon 
+		
+//given a list of index and color, can you put color into the divs? using HSB
+
+-----------------------------------------------------------------------------------------
+
+TO DO (3/10):
+1) selectors for which simulation is running
+2) button to enter maximum walkable distance
+3) come up for interface for inputting data (find plugin for drag and drop, if not then
+do a thing where you click on a div cell and then type in the data 
+
+selector menu for what simulation you"re running – eg job to houses, houses to restaurants, 
+so on, that should change main screen display 
+ 
+write code for changing divs based on the buildings
+
+blue – houses
+red – jobs 
+yellow – retail
+gray – food
+green – oxygen producing 
+black – sustainable transportation
+beige – tourist sites
+brown – political buildings 
+white – streets/infrastructure
+clear – basement entrance 
+
+put each simulation on a thumbnail on the bottom, make rollover text explaining what it is
+(one for just the model with nothing on it, walkscore, employment score, amenitites score, 
+combined score,  ** take screenshot and put that as thumbnail image 
+
+**** drag and drop buildings function or click a cell and type in information
+
+<thead>
+<tr>
+  <th colspan = "4" id="simulation">GRID SIZE</th>
+</tr>
+<tr>
+  <td id = "type_width"><input type = "text" name = "width" id="width" value="480"></td> 
+   <td id = "type_height"><input type = "text" name = "height" id="height" value="480" ></td> 
+	<td><input type = "button" name = "simulation_submit" value = "submit" id="size_submit"></td>
+   </td>
+</tr>
+</thead>
+-->
+
+<thead>
+<tr>
+  <th colspan = "4" id="simulation">SIMULATION</th>
+</tr>
+<tr>
+ <td id = "drop" colspan = "5">
+ 	<select name ="simulation_drop">
+   <option value="tester">please select </option>
+  <option value="tester">Houses</option>
+  <option value="tester">Jobs</option>
+  <option value="tester">Retail</option>
+  <option value="tester">Food</option>
+  <option value="tester">Oxygen Producing</option>  
+  <option value="tester">Public Transportation</option>
+  <option value="tester">Tourist Sites</option>
+  <option value="tester">Political Buildings</option>
+  <option value="tester">Streets</option>
+  <option value="tester"> Basement Entrance</option>  
+  </select>
+	<input type = "submit" name = "simulation_submit" value = "submit">
+   </td>
+</tr>
+</thead>
+
+<thead>
+<tr>
+  <th colspan = "4" id="distance">MAXIMUM WALKABLE DISTANCE</th>
+</tr>
+<tr>
+<form Name="maximumWalkableDistance">
+  <td colspan = "4" id = "max_fill"><input type = "text" name = "maximum" value = 1000>
+	<select name ="unit">
+  <option value="m">m</option>
+  <option value="km">km</option>
+  <option value="mi">mi</option>
+  </select>
+  <button name = "walk_submit" type = "button" value = "submit" onClick="submitDistance(this.form)">Update</td>
+  </form>
+  <!-- make walkable distance default 1000 m; button for updating the new walkable distance; 
+  eventually have a reaction within the interface-->
+  
+</tr>
+</thead>
+
+
+</table>
+</form>
+</div>
+
+<div id = "footer">
+<h1> DRAGGABLE ICONS </h1>
+<div id = "tooltip"> </div>
+<div class = "icons">
+<img src = "icons/house.png" alt="Houses" width = "50" height = "50" id = "house">
+<img src = "icons/star.png" alt="Houses" width = "50" height = "50" id = "tourist">
+<img src = "icons/shopping.png" alt="Houses" width = "50" height = "50" id = "retail">
+<img src = "icons/sun.png" alt="Houses" width = "50" height = "50" id = "nature">
+<img src = "icons/jobs.png" alt="Houses" width = "50" height = "50" id = "jobs">
+<img src = "icons/political.png" alt="Houses" width = "50" height = "50" id = "political">
+<img src = "icons/food.png" alt="Houses" width = "50" height = "50" id = "food">
+<img src = "icons/public.png" alt="Houses" width = "50" height = "50" id = "public">
+</div>
+</div>
+
+
+<div house ='["Labor", "apartment",10, 6, 12, 100, 0, 0, 255]'></div>
+	
+<!--the following lines are code for the grid -->
+<script>
+
+ var buildingsData = ["category", "type", "UC", "target", "floors", "containment_rate", "R", "G", "B", "transit"];
+
+function createGrid() {
+
+	$("#thegrid").remove();	
+	
+	//  var ratio_w = 48,
+	//		ratio_h = 48;
+   
+    var parent = document.createElement("div");
+    parent.className = "grid";
+    parent.id = "thegrid";
+    parent.style.width = 480 + "px";
+    parent.style.height = 480 + "px";
+
+    var newID = 1;
+     
+    for (var i = 0; i < 48; i++) {
+        for (var p = 0; p < 48; p++) {
+            var cell = document.createElement("div");
+            cell.id = parseInt(newID++);
+            cell.style.height = 9 + "px";
+            cell.style.width = 9 + "px";
+            cell.data = buildingsData;
+            parent.appendChild(cell);
+        }
+    }
+    
+    $("div", parent).droppable({
+		accept: "img", 
+		hoverClass: "active",
+		drop: function(event, ui) {
+			$(ui.draggable)
+				.css("top", $(".grid div").css("top"))
+				.css("left", $(".grid div").css("left"))
+				.css("bottom", $(".grid div").css("bottom"))
+				.css("right", $(".grid div").css("right"));
+			var id = $(ui.draggable).attr("id");
+			buildingsData = $(ui.draggable).data("test");
+			//alert(buildingsData);
+			var rgb = 'rgb('+buildingsData[6] +','+buildingsData[7]+','+buildingsData[8]+')';
+			//alert(rgb); 
+			$(this).css("background-color", rgb);
+			var index = this.id - 1;
+			buildings[index] = buildingsData;
+		}});
+
+    document.body.appendChild(parent);
+}
+
+createGrid();
+
+/*
+$("#size_submit").click(function () {
+	total_w = Math.ceil(($("#width").val())/10)*10;
+	total_h = Math.ceil(($("#height").val())/10)*10;
+	createGrid(total_w, total_h, 10);
+	});
+*/
+
+//<!--the following lines are code for the icons -->
+
+$(function() {
+	$("img").draggable({containment:"document"},
+					   {revert:true},
+					   {opacity:0.7}, 
+					   {tolerance: "fit"},
+					   {start: function(event, ui) {
+					    snap: ".grid div"
+					   	snapMode: "inner"
+					   	}});
+	/*
+	$(function() {
+	$("img").draggable({containment:"document"},
+					   {revert:true},
+					   {opacity:0.7}, 
+					   {tolerance: "fit"},
+					   {start: function(event, ui) {
+					    $(this).css({width:"10px", height:"10px"})
+					    snap: ".grid div"
+					   	snapMode: "inner"
+						}},
+						{stop:function() {
+						$(this).css({width:"50px", height:"50px"});
+						}}
+	);	
+	
+	*/
+	
+	$("img").hover(function() {
+		var msg = "Drag and drop me to see the " + $(this).attr("id") + " simulation!";
+		$("#tooltip").html(msg).css({"left": 250,"font-size":"18px"});
+        $("#tooltip").show();
+    },
+    	function() {
+        $("#tooltip").hide();
+    	}
+	);
+	
+	
+	$("#house").data("test", ["Labor", "apartment",10, 6, 12, 100, 0, 0, 255, 0]);
+	$("#tourist").data("test", ["Tourism", "tourism", 2,2,2, 0.2, 255, 178, 102, 0]);
+	$("#retail").data("test", ["Retail","retail",3, 3, 3, 0.3, 255, 255, 102, 0]);
+	$("#jobs").data("test", ["Jobs","lab",10, 6, 12, 100, 255, 0, 0, 0]);
+	$("#political").data("test", ["Government","government", 5, 5, 5, 0.5, 139, 71, 38, 0]);
+	$("#food").data("test", ["Food", "food", 6, 6, 6, 0.6, 100, 100, 100, 0]);
+	$("#public").data("test", ["Transit", "bus", 0, 0, 0, 0, 0, 0, 0, 0]);
+	$("#nature").data("test", ["Nature", "nature", 8, 8, 8, 0.8, 0, 102, 0, 0]);
+
+
+	});
+	
+</script>
+
+
+<canvas id="sketch" data-processing-sources="sketch.pde"></canvas>
+</br>
+</br>
+</br>
+</br>
+</br>
+</br>
+</br>
+</br>
+</br>
+</body>
