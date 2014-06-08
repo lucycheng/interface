@@ -155,6 +155,7 @@ put each simulation on a thumbnail on the bottom, make rollover text explaining 
 combined score,  ** take screenshot and put that as thumbnail image 
 
 **** drag and drop buildings function or click a cell and type in information
+-->
 
 <thead>
 <tr>
@@ -167,7 +168,7 @@ combined score,  ** take screenshot and put that as thumbnail image
    </td>
 </tr>
 </thead>
--->
+
 
 <thead>
 <tr>
@@ -241,12 +242,72 @@ combined score,  ** take screenshot and put that as thumbnail image
 
  var buildingsData = ["category", "type", "UC", "target", "floors", "containment_rate", "R", "G", "B", "transit"];
 
+function createGrid(total_w, total_h, size) {
+
+	$("#thegrid").remove();	
+	
+	var ratio_w = parseInt((total_w) / size),
+		ratio_h = parseInt((total_h) / size);
+   
+    var parent = document.createElement("div");
+    parent.className = "grid";
+    parent.id = "thegrid";
+    parent.style.width = (ratio_w * size) + "px";
+    parent.style.height = (ratio_h * size) + "px";
+
+    var newID = 1;
+     
+    for (var i = 0; i < ratio_h; i++) {
+        for (var p = 0; p < ratio_w; p++) {
+            var cell = document.createElement("div");
+            cell.id = parseInt(newID++);
+            cell.style.height = (size - 1) + "px";
+            cell.style.width = (size - 1) + "px";
+            cell.data = buildingsData;
+            parent.appendChild(cell);
+        }
+    }
+    $("div",parent).droppable({
+		accept: "img", 
+		hoverClass: "active",
+		drop: function(event, ui) {
+			$(ui.draggable)
+				.css("top", $(".grid div").css("top"))
+				.css("left", $(".grid div").css("left"))
+				.css("bottom", $(".grid div").css("bottom"))
+				.css("right", $(".grid div").css("right"));
+			var id = $(ui.draggable).attr("id");
+			buildingsData = $(ui.draggable).data("test");
+			<!-- alert(buildingsData); -->
+			var rgb = 'rgb('+buildingsData[6] +','+buildingsData[7]+','+buildingsData[8]+')';
+			<!-- alert(rgb); -->
+			$(this).css("background-color", rgb);
+			var index = this.id - 1;
+			buildings[index] = buildingsData;
+		}});
+
+    document.body.appendChild(parent);
+}
+
+ var total_w = parseInt($("#width").val()),
+     total_h = parseInt($("#height").val());
+        
+createGrid(total_w, total_h, 10);
+
+$("#size_submit").click(function () {
+	total_w = Math.ceil(($("#width").val())/10)*10;
+	total_h = Math.ceil(($("#height").val())/10)*10;
+	createGrid(total_w, total_h, 10);
+	});
+/*
+ var buildingsData = ["category", "type", "UC", "target", "floors", "containment_rate", "R", "G", "B", "transit"];
+
 function createGrid() {
 
 	$("#thegrid").remove();	
 	
-	//  var ratio_w = 48,
-	//		ratio_h = 48;
+	  var ratio_w = 48,
+		   ratio_h = 48;
    
     var parent = document.createElement("div");
     parent.className = "grid";
